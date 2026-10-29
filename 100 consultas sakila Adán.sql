@@ -27,6 +27,8 @@ GROUP BY actor_id
 HAVING COUNT(film_actor.film_id) >= 20;
 
 -- 3:  Para cada idioma, indica cuántas películas están catalogadas en ese idioma.
+
+select * from film;
 -- 4:  Muestra el promedio de duración (length) de las películas por idioma y filtra aquellos idiomas con duración media estrictamente mayor a 110 minutos.
 -- 5:  Para cada película, muestra cuántas copias hay en el inventario.
 -- 6:  Lista solo las películas que tienen al menos 5 copias en inventario.
