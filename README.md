@@ -2,7 +2,7 @@
 
 ## Instrucciones de git
 
-´´´bash
+```bash
 git add .
 git commit -m "Título"
 git push
