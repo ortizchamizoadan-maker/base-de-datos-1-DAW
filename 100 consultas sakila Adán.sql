@@ -27,10 +27,41 @@ GROUP BY actor_id
 HAVING COUNT(film_actor.film_id) >= 20;
 
 -- 3:  Para cada idioma, indica cuántas películas están catalogadas en ese idioma.
+SELECT 
+    language.language_id,
+    language.name AS idioma,
+    COUNT(film.film_id) AS total_peliculas
+FROM
+    language
+        JOIN
+    film USING (language_id)
+GROUP BY language_id;
 
-select * from film;
+
 -- 4:  Muestra el promedio de duración (length) de las películas por idioma y filtra aquellos idiomas con duración media estrictamente mayor a 110 minutos.
--- 5:  Para cada película, muestra cuántas copias hay en el inventario.
+SELECT 
+    language.language_id,
+    language.name AS idioma,
+    AVG(film.length) AS duracion_media
+FROM
+    language
+        JOIN
+    film USING (language_id)
+GROUP BY language_id
+HAVING AVG(film.length) > 110;
+-- 5: Para cada película, muestra cuántas copias hay en el inventario.
+SELECT 
+    f.film_id,
+    f.title AS pelicula,
+    COUNT(i.inventory_id) AS total_copias
+FROM 
+    film f, 
+    inventory i
+WHERE 
+    f.film_id = i.film_id
+GROUP BY 
+    f.film_id, 
+    f.title;
 -- 6:  Lista solo las películas que tienen al menos 5 copias en inventario.
 -- 7:  Para cada artículo de inventario, cuenta cuántos alquileres se han realizado.
 -- 8:  Para cada cliente, muestra cuántos alquileres ha realizado en total.
