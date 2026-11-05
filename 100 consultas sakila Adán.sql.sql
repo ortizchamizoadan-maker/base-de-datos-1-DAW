@@ -167,29 +167,148 @@ SELECT f.film_id, f.title, AVG(f.rental_rate) AS promedio_tarifa
 FROM film f, inventory i
 WHERE f.film_id = i.film_id
 GROUP BY f.film_id, f.title;
--- 26:  Para cada actor, muestra la duración media (length) de sus películas.
--- 27:  Para cada ciudad, cuenta cuántos clientes hay (usando la relación cliente->address->city requiere 3 tablas; aquí contamos direcciones por ciudad).
--- 28:  Para cada película, cuenta cuántos actores tiene asociados.
--- 29:  Para cada categoría (por id), cuenta cuántas películas pertenecen a ella (sin nombre de categoría para mantener 2 tablas).
--- 30:  Para cada tienda, cuenta cuántos alquileres totales se originan en su inventario.
+-- 26: Para cada actor, muestra la duración media (length) de sus películas.
+SELECT fa.actor_id, AVG(f.length) AS duracion_media
+FROM film_actor fa, film f
+WHERE fa.film_id = f.film_id
+GROUP BY fa.actor_id;
+
+-- 27: Para cada ciudad, cuenta cuántos clientes hay (aquí contamos direcciones por ciudad para mantener 2 tablas).
+SELECT c.city_id, c.city, COUNT(a.address_id) AS total_direcciones
+FROM city c, address a
+WHERE c.city_id = a.city_id
+GROUP BY c.city_id, c.city;
+
+-- 28: Para cada película, cuenta cuántos actores tiene asociados.
+SELECT f.film_id, f.title, COUNT(fa.actor_id) AS total_actores
+FROM film f, film_actor fa
+WHERE f.film_id = fa.film_id
+GROUP BY f.film_id, f.title;
+
+-- 29: Para cada categoría (por id), cuenta cuántas películas pertenecen a ella (sin nombre de categoría para mantener 2 tablas).
+SELECT fc.category_id, COUNT(f.film_id) AS total_peliculas
+FROM film_category fc, film f
+WHERE fc.film_id = f.film_id
+GROUP BY fc.category_id;
+
+-- 30: Para cada tienda, cuenta cuántos alquileres totales se originan en su inventario.
+SELECT i.store_id, COUNT(r.rental_id) AS total_alquileres
+FROM inventory i, rental r
+WHERE i.inventory_id = r.inventory_id
+GROUP BY i.store_id;
 -- ==============================================
 -- SECCIÓN B) 30 CONSULTAS CON JOIN DE 3 TABLAS
 -- ==============================================
--- 31:  Para cada actor, cuenta cuántas películas tiene y muestra solo los que superan 15 películas.
--- 32:  Para cada categoría (por nombre), cuenta cuántas películas hay en esa categoría.
--- 33:  Para cada película, cuenta cuántos alquileres se han hecho de sus copias.
--- 34:  Para cada cliente, suma el importe pagado en 2005 y filtra clientes con total >= 150.
--- 35:  Para cada tienda, suma el importe cobrado por todos sus empleados.
--- 36:  Para cada ciudad, cuenta cuántos empleados residen ahí (staff -> address -> city).
--- 37:  Para cada ciudad, cuenta cuántas tiendas existen (store -> address -> city).
--- 38:  Para cada actor, calcula la duración media de sus películas del año 2006.
--- 39:  Para cada categoría, calcula la duración media y muestra solo las que superan 120.
--- 40:  Para cada idioma, suma las tarifas de alquiler (rental_rate) de todas sus películas.
--- 41:  Para cada cliente, cuenta cuántos alquileres realizó en fines de semana (SÁB-DO) usando DAYOFWEEK (1=Domingo).
--- 42:  Para cada actor, muestra el total de títulos distintos en los que participa (equivale a COUNT DISTINCT, sin subconsulta).
--- 43:  Para cada ciudad, cuenta cuántos clientes residen ahí (customer -> address -> city).
--- 44:  Para cada categoría, muestra cuántos actores distintos participan en películas de esa categoría.
--- 45:  Para cada tienda, cuenta cuántas copias totales (inventario) tiene de películas en 2006.
+-- 31: Para cada actor, cuenta cuántas películas tiene y muestra solo los que superan 15 películas.
+SELECT a.actor_id, a.first_name, a.last_name, COUNT(f.film_id) AS total_peliculas
+FROM actor a, film_actor fa, film f
+WHERE a.actor_id = fa.actor_id 
+  AND fa.film_id = f.film_id
+GROUP BY a.actor_id, a.first_name, a.last_name
+HAVING COUNT(f.film_id) > 15;
+
+-- 32: Para cada categoría (por nombre), cuenta cuántas películas hay en esa categoría.
+SELECT c.category_id, c.name AS categoria, COUNT(f.film_id) AS total_peliculas
+FROM category c, film_category fc, film f
+WHERE c.category_id = fc.category_id 
+  AND fc.film_id = f.film_id
+GROUP BY c.category_id, c.name;
+
+-- 33: Para cada película, cuenta cuántos alquileres se han hecho de sus copias.
+SELECT f.film_id, f.title, COUNT(r.rental_id) AS total_alquileres
+FROM film f, inventory i, rental r
+WHERE f.film_id = i.film_id 
+  AND i.inventory_id = r.inventory_id
+GROUP BY f.film_id, f.title;
+
+-- 34: Para cada cliente, suma el importe pagado en 2005 y filtra clientes con total >= 150.
+SELECT c.customer_id, c.first_name, c.last_name, SUM(p.amount) AS total_pagado_2005
+FROM customer c, rental r, payment p
+WHERE c.customer_id = r.customer_id 
+  AND r.rental_id = p.rental_id
+  AND YEAR(p.payment_date) = 2005
+GROUP BY c.customer_id, c.first_name, c.last_name
+HAVING SUM(p.amount) >= 150;
+
+-- 35: Para cada tienda, suma el importe cobrado por todos sus empleados.
+SELECT st.store_id, SUM(p.amount) AS total_cobrado
+FROM store st, staff s, payment p
+WHERE st.store_id = s.store_id 
+  AND s.staff_id = p.staff_id
+GROUP BY st.store_id;
+
+-- 36: Para cada ciudad, cuenta cuántos empleados residen ahí (staff -> address -> city).
+SELECT ci.city_id, ci.city, COUNT(s.staff_id) AS total_empleados
+FROM staff s, address a, city ci
+WHERE s.address_id = a.address_id 
+  AND a.city_id = ci.city_id
+GROUP BY ci.city_id, ci.city;
+
+-- 37: Para cada ciudad, cuenta cuántas tiendas existen (store -> address -> city).
+SELECT ci.city_id, ci.city, COUNT(st.store_id) AS total_tiendas
+FROM store st, address a, city ci
+WHERE st.address_id = a.address_id 
+  AND a.city_id = ci.city_id
+GROUP BY ci.city_id, ci.city;
+
+-- 38: Para cada actor, calcula la duración media de sus películas del año 2006.
+SELECT a.actor_id, a.first_name, a.last_name, AVG(f.length) AS duracion_media_2006
+FROM actor a, film_actor fa, film f
+WHERE a.actor_id = fa.actor_id 
+  AND fa.film_id = f.film_id
+  AND f.release_year = 2006
+GROUP BY a.actor_id, a.first_name, a.last_name;
+
+-- 39: Para cada categoría, calcula la duración media y muestra solo las que superan 120.
+SELECT c.category_id, c.name AS categoria, AVG(f.length) AS duracion_media
+FROM category c, film_category fc, film f
+WHERE c.category_id = fc.category_id 
+  AND fc.film_id = f.film_id
+GROUP BY c.category_id, c.name
+HAVING AVG(f.length) > 120;
+
+-- 40: Para cada idioma, suma las tarifas de alquiler (rental_rate) de todas sus películas.
+SELECT l.language_id, l.name AS idioma, SUM(f.rental_rate) AS suma_tarifas
+FROM language l, film f
+WHERE l.language_id = f.language_id
+GROUP BY l.language_id, l.name;
+
+-- 41: Para cada cliente, cuenta cuántos alquileres realizó en fines de semana (SÁB-DO) usando DAYOFWEEK (1=Domingo, 7=Sábado).
+SELECT c.customer_id, c.first_name, c.last_name, COUNT(r.rental_id) AS alquileres_finde
+FROM customer c, rental r, inventory i
+WHERE c.customer_id = r.customer_id 
+  AND r.inventory_id = i.inventory_id
+  AND DAYOFWEEK(r.rental_date) IN (1, 7)
+GROUP BY c.customer_id, c.first_name, c.last_name;
+
+-- 42: Para cada actor, muestra el total de títulos distintos en los que participa (COUNT DISTINCT, sin subconsulta).
+SELECT a.actor_id, a.first_name, a.last_name, COUNT(DISTINCT f.title) AS titulos_distintos
+FROM actor a, film_actor fa, film f
+WHERE a.actor_id = fa.actor_id 
+  AND fa.film_id = f.film_id
+GROUP BY a.actor_id, a.first_name, a.last_name;
+
+-- 43: Para cada ciudad, cuenta cuántos clientes residen ahí (customer -> address -> city).
+SELECT ci.city_id, ci.city, COUNT(cu.customer_id) AS total_clientes
+FROM customer cu, address a, city ci
+WHERE cu.address_id = a.address_id 
+  AND a.city_id = ci.city_id
+GROUP BY ci.city_id, ci.city;
+
+-- 44: Para cada categoría, muestra cuántos actores distintos participan en películas de esa categoría.
+SELECT c.category_id, c.name AS categoria, COUNT(DISTINCT fa.actor_id) AS actores_distintos
+FROM category c, film_category fc, film_actor fa
+WHERE c.category_id = fc.category_id 
+  AND fc.film_id = fa.film_id
+GROUP BY c.category_id, c.name;
+
+-- 45: Para cada tienda, cuenta cuántas copias totales (inventario) tiene de películas en 2006.
+SELECT st.store_id, COUNT(i.inventory_id) AS copias_2006
+FROM store st, inventory i, film f
+WHERE st.store_id = i.store_id 
+  AND i.film_id = f.film_id
+  AND f.release_year = 2006
+GROUP BY st.store_id;
 -- 46:  Para cada cliente, suma el total pagado por alquileres cuyo empleado pertenece a la tienda 1.
 -- 47:  Para cada película, cuenta cuántos actores tienen el apellido de longitud >= 5.
 -- 48:  Para cada categoría, suma la duración total (length) de sus películas.
